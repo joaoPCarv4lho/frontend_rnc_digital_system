@@ -3,4 +3,5 @@ export interface Part{
     part_code: string;
     description: string;
     client: string;
+    active: boolean;
 }

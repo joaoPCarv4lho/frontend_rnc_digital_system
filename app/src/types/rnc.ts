@@ -1,8 +1,8 @@
 import type { User } from "./user";
 import type { Part } from "./part";
 
-
 export interface RNC{
+    id: number;
     num_rnc: number;
     title: string;
     status: string;
