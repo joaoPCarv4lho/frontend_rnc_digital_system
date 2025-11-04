@@ -4,7 +4,7 @@ import { isAxiosError } from "axios";
 import type { UserRegisterData } from "../types/user";
 import { Input } from "../components/Input";
 
-export default function Register(){
+export default function RegisterPage(){
     const [formData, setFormData] = useState<UserRegisterData>({
         name: "",
         email: "",
