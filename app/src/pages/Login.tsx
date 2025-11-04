@@ -6,7 +6,7 @@ import { isAxiosError } from "axios";
 import api from "../services/api";
 import { useState } from "react";
 
-export default function Login(){
+export default function LoginPage(){
     const [formData, setFormData] = useState<UserLoginData>({
         email: "",
         password: ""
@@ -34,7 +34,12 @@ export default function Login(){
             const response = await api.post("/auth/login", formData);
             if(response.status === 200 && response.data.access_token){
                 await login(formData.email, formData.password);
-                navigate("/rncs");
+                if(response.data.user.role === "operador"){
+                    navigate("/operador");
+                }
+                if(response.data.user.role === "admin"){
+                    navigate("/admin")
+                }
             }else{
                 setMessage("Login failed. Please try again.");
             }
