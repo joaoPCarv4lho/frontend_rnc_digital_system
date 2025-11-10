@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from './context/useAuth';
 import RegisterPage from './pages/Register.tsx'
 import AdminDashboard from './pages/AdminDashboard.tsx'
+import QualityDashboard from './pages/QualityDashboard.tsx';
 import LoginPage from './pages/Login.tsx'
 import OperatorRNCPage from './pages/OperatorRNC.tsx'
 import { PrivateRouter } from './components/PrivateRouter.tsx';
@@ -22,6 +23,11 @@ function App() {
         <PrivateRouter>
           <OperatorRNCPage />
         </PrivateRouter>} />
+        <Route path='/quality-dashboard' 
+        element={
+          <PrivateRouter>
+            <QualityDashboard />
+          </PrivateRouter>} />
 
         <Route path='/admin' 
         element={

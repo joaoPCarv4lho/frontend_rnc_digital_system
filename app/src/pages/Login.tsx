@@ -40,6 +40,9 @@ export default function LoginPage(){
                 if(response.data.user.role === "admin"){
                     navigate("/admin")
                 }
+                if(response.data.user.role === "qualidade"){
+                    navigate("/quality-dashboard");
+                }
             }else{
                 setMessage("Login failed. Please try again.");
             }
