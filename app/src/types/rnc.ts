@@ -8,6 +8,7 @@ export interface RNC{
     status: string;
     condition: string;
     observations?: string;
+    critical_level: string;
     part_id: number;
     open_by_id: number;
     current_responsible?: User;
@@ -15,6 +16,7 @@ export interface RNC{
     opening_date: Date;
     closing_date: Date;
     part: Part;
+    part_code: string;
     open_by: User;
     closed_by?: User;
 }
