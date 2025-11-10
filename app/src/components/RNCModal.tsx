@@ -67,10 +67,11 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
                 part_id: partData.id,
                 title,
                 observations,
+                part_code,
                 critical_level: criticalLevel,
                 date_of_occurrence: new Date().toISOString(),
                 open_by_id: user?.id,
-                condition,
+                condition
             };
             try {
                 setLoading(true);

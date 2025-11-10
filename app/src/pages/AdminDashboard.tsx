@@ -53,9 +53,8 @@ export default function AdminDashboard(){
 
     return (
         <div>
-            <Navbar />
+            <Navbar title="Painel Administrativo" />
             <div className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Painel Administrativo</h1>
 
             {/*Filtros*/}
             <div className="bg-gray-50 p-5 rounded-xl shadow-sm mb-8 border border-gray-200">

@@ -1,9 +1,9 @@
 import type { RNCTableProps } from "../types/rncTable";
 
 
-export const RNCTable = ({rncs}: RNCTableProps) => {
+export const RNCTable = ({rncs, situation}: RNCTableProps) => {
     if (!rncs.length){
-        return <p className="text-center text-gray-500 mt-6">Nenhum RNC criado ainda</p>
+        return <p className="text-center text-gray-500 mt-6">Nenhum RNC {situation} ainda</p>
     }
 
     return(
