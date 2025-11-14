@@ -11,6 +11,7 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
     const [observations, setObservations] = useState("");
     const [critical_level, setCritical_level] = useState("");
     const [condition, setCondition] = useState("");
+    const [status, setStatus] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
 
@@ -21,6 +22,7 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
             setObservations("");
             setCritical_level("");
             setCondition("");
+            setStatus("");
             setErrorMsg("");
             return;
         }
@@ -70,8 +72,9 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
             setLoading(true);
             await api.patch(`/rnc/update_rnc/${rncData.num_rnc}`, {
                 observations,
-                critical_level: critical_level,
-                condition
+                critical_level,
+                condition,
+                status,
             });
             onSubmit();
             onClose();
@@ -80,6 +83,7 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
             setObservations("");
             setCritical_level("");
             setCondition("");
+            setStatus("");
             setErrorMsg("");
             alert("RNC atualizada com sucesso!");
             handleClose();
@@ -146,6 +150,12 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
                                     <option value="aprovado">Aprovado</option>
                                     <option value="retrabalho">Retrabalho</option>
                                     <option value="refugo">Refugo</option>
+                                </select>
+                                <label className="text-sm font-semibold mt-2">Status:</label>
+                                <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full border rounded p-2">
+                                    <option value="">Selecione</option>
+                                    <option value="aberto">Aberto</option>
+                                    <option value="fechado">Fechado</option>
                                 </select>
                             </div>
                         </div>
