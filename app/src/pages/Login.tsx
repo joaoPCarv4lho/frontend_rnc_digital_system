@@ -3,7 +3,6 @@ import type { UserLoginData } from "../types/user";
 import { useAuth } from "../context/useAuth";
 import { Input } from "../components/Input";
 import { isAxiosError } from "axios";
-import api from "../services/api";
 import { useState } from "react";
 
 export default function LoginPage(){
@@ -31,25 +30,37 @@ export default function LoginPage(){
         event.preventDefault();
         setLoading(true);
         try{
-            const response = await api.post("/auth/login", formData);
-            if(response.status === 200 && response.data.access_token){
-                await login(formData.email, formData.password);
-                if(response.data.user.role === "operador"){
+            await login(formData.email, formData.password)
+
+            const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+            switch(storedUser.role){
+                case "operador":
                     navigate("/operador");
-                }
-                if(response.data.user.role === "admin"){
-                    navigate("/admin")
-                }
-                if(response.data.user.role === "qualidade"){
+                    break;
+                case "admin":
+                    navigate("/admin");
+                    break;
+                case "qualidade":
                     navigate("/quality-dashboard");
-                }
-            }else{
-                setMessage("Login failed. Please try again.");
+                    break;
+                case "engenharia":
+                    navigate("/engineering-dashboard");
+                    break;
+                case "tecnico_usinagem":
+                    navigate("/tec-usinagem");
+                    break;
+                case "tecnico_fundicao":
+                    navigate("/tec-fundicao");
+                    break;
+                default:
+                    navigate("/");
             }
         } catch (error: unknown) {
             if (isAxiosError(error)) {
                 setMessage(error.response?.data?.detail || "Login failed. Please try again.");
                 setError("Credenciais inválidas. Tente novamente.");
+                console.log(error.response);
             } else if (error instanceof Error) {
                 setMessage(error.message);
                 setError(error.message);
