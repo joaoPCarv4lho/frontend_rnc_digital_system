@@ -43,6 +43,8 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
             try {
                 const response = await api.get(`/part/code/${part_code}`);
                 setPartData(response.data);
+                console.log(response)
+                
             } catch (error) {
                 console.error("Erro ao buscar peça:", error);
                 setPartData(null);
@@ -67,7 +69,7 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
                 part_id: partData.id,
                 title,
                 observations,
-                part_code,
+                part_code: part_code,
                 critical_level: criticalLevel,
                 date_of_occurrence: new Date().toISOString(),
                 open_by_id: user?.id,
