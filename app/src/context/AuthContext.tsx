@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AuthContext } from "./AuthContextDefaultValue";
 import api from "../services/api";
 import type { UserWithoutPassword } from "../types/user";
+import { webSocketClient } from "../types/websocket";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<UserWithoutPassword | null>(null);
@@ -17,11 +18,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
             setToken(storedToken);
             setUser(JSON.parse(storedUser));
+            webSocketClient.initialize(storedToken)
         }else{
             setToken(null);
             setUser(null);
+            webSocketClient.shutdown()
         }
-
         setLoading(false);
     }, []);
 
@@ -46,6 +48,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         api.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
         setUser(user);
         setToken(access_token);
+
+        webSocketClient.initialize(access_token)
     };
 
     const logout = useCallback(() => {
@@ -53,6 +57,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem("user");
         setUser(null);
         setToken(null);
+
+        webSocketClient.shutdown()
         delete api.defaults.headers.common["Authorization"];
     }, []);
 
