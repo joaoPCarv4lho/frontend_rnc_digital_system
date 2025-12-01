@@ -1,20 +1,18 @@
-import { useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
+import { motion, AnimatePresence } from "framer-motion";
+import { CircleUserRound } from "lucide-react";
+
+import { FadeMessage } from "../components/FadeMessage";
+import { RNCSection } from "../components/RNCSection";
 import { RNCModal } from "../components/RNCModal";
 import { Navbar } from "../components/Navbar";
-import { FadeMessage } from "../components/FadeMessage";
 
-import api from "../services/api";
+import { useRNCWebSocket } from "../hooks/useRNCWebSocket";
+import type { RNCListResponse } from "../types/rnc";
 import { useAuth } from "../context/useAuth";
-import { connectToSocket } from "../services/socket";
-import { adaptWebSocketDataToRNC } from "../utils/convertRNC";
-
-import type { RNC } from "../types/rnc";
-import type { RNCEvent } from "../types/rncEvents";
-import { RNCSection } from "../components/RNCSection";
+import api from "../services/api";
 
 const operatorColumns = [
     { key: "num_rnc", label: "N° RNC" },
@@ -24,11 +22,18 @@ const operatorColumns = [
     { key: "closing_date", label: "Data de Fechamento" }
 ];
 
+
 export default function OperatorRNCPage(){
     const {user, isAuthenticated} = useAuth();
     const navigate = useNavigate();
 
-    const [rncs, setRncs] = useState<RNC[]>([]);
+    const [rncs, setRncs] = useState<RNCListResponse>({
+        items: [],
+        total: 0,
+        page: 1,
+        page_size: 10,
+        total_pages: 1
+    });
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string>("");
@@ -43,12 +48,24 @@ export default function OperatorRNCPage(){
         setError("");
 
         try {
-            const { data } = await api.get<RNC[]>("/rnc/list_user_rncs");
-            setRncs(Array.isArray(data) ? data : []);
-        } catch (error) {
+            const { data } = await api.get("/rnc/list/open/user");
+            setRncs({
+                items: Array.isArray(data.items) ? data.items : [],
+                total: data.total ?? 0,
+                page: data.page ?? 1,
+                page_size: data.page_size ?? data.items?.length ?? 10,
+                total_pages: data.total_pages ?? 1
+            });
+        } catch (error: any) {
             console.error("Erro ao carregar RNCs: ", error);
-            setError("Erro ao seus carregar RNCs")
-            setRncs([]);
+            setError(error.customMessage)
+            setRncs({
+                items: [],
+                total: 0,
+                page: 0,
+                page_size: 0,
+                total_pages: 0
+            });
         }finally{
             setLoading(false);
         }
@@ -58,27 +75,12 @@ export default function OperatorRNCPage(){
         if(user) fetchUserRncs();
     }, [user, fetchUserRncs]);
 
-    useEffect(() => {
-        const socket = connectToSocket((data: RNCEvent) => {
-            switch (data.event){
-                case "rnc_created":
-                    toast.success("Novo RNC Criado!!");
-                    setRncs((prev) => [...prev, adaptWebSocketDataToRNC(data.payload)]);
-                    break;
-                case "rnc_updated":
-                    toast(`RNC atualizada: ${data.payload.title}`);
-                    setRncs((prev) => prev.map((rnc) => rnc.id === data.payload.id ? adaptWebSocketDataToRNC(data.payload) : rnc));
-                    break;
-                default:
-                    console.log("Evento de socket desconhecido: ", data);
-            }
-        });
-        return () => {
-            if(socket && socket.readyState === WebSocket.OPEN){
-                socket.close();
-            }
-        };
-    }, []);
+    useRNCWebSocket({
+        onRncCreated: fetchUserRncs,
+        onRncUpdated: fetchUserRncs,
+        onRncClosed: fetchUserRncs
+    })
+
 
       // Fallback para página em branco
     if (!isAuthenticated || !user) {
@@ -90,8 +92,8 @@ export default function OperatorRNCPage(){
     }
 
     return(
-        <div className="min-h-screen bg-gray-50">
-            <Navbar title="Painel do Operador"/>
+        <div className="min-h-screen bg-gray-200">
+            <Navbar title="Painel do Operador" icon={<CircleUserRound />}/>
 
             <div className="container mx-auto px-4 py-8">
                 {/**Cabeçalho */}
@@ -108,11 +110,11 @@ export default function OperatorRNCPage(){
                         <FadeMessage key="loading" text="Carregando RNCs..." />
                     ) : error ?(
                         <FadeMessage key="error" text={error} color="text-red-500" />
-                    ) : rncs.length === 0 ?(
+                    ) : rncs.items.length === 0 ?(
                         <FadeMessage key="empty" text="Nenhum RNC encontrado" />
                     ) : (
                         <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
-                            <RNCSection title="Meus RNCs" rncs={rncs} situation="" loading={loading} typeColumns={operatorColumns} />
+                            <RNCSection mode="list" title="Meus RNCs" rncs={rncs} situation="" loading={loading} typeColumns={operatorColumns} />
                         </motion.div>
                     )}
                 </AnimatePresence>
