@@ -8,6 +8,7 @@ import LoginPage from './pages/Login.tsx'
 import OperatorRNCPage from './pages/OperatorRNC.tsx'
 import { PrivateRouter } from './components/PrivateRouter.tsx';
 import EngineeringDashboard from './pages/EngineeringDashboard.tsx';
+import TechnicalPage from './pages/TechnicalRNC.tsx';
 
 function App() {
 
@@ -29,6 +30,12 @@ function App() {
           <PrivateRouter allowedRoles={["qualidade"]}>
             <QualityDashboard />
           </PrivateRouter>} />
+
+        <Route path='/technical' element={
+          <PrivateRouter allowedRoles={["tecnico"]}>
+            <TechnicalPage />
+          </PrivateRouter>
+        } />
 
         <Route path='/engineering-dashboard' element={
           <PrivateRouter allowedRoles={["engenharia"]}>
