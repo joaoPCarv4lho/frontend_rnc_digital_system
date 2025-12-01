@@ -1,28 +1,29 @@
 import { useEffect, useState } from "react"
-import type { RNC } from "../types/rnc"
+import type { RNCReadWithPart } from "../types/rnc"
 import type { RNCUpdateModalProps } from "../types/rncUpdateModal"
-import type { Part } from "../types/part";
 import api from "../services/api";
 
 export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProps) => {
-    const [partCode, setPartCode] = useState("");
-    const [partData, setPartData] = useState<Part | null>(null);
-    const [rncData, setRncData] = useState<RNC | null>(null);
-    const [observations, setObservations] = useState("");
+    const [part_code, setPart_code] = useState("");
+    const [rncData, setRncData] = useState<RNCReadWithPart | null>(null);
+    const [analysisObservations, setAnalysisObservations] = useState("");
+    const [rootCause, setRootCause] = useState("");
+    const [correctiveAction, setCorrectiveAction] = useState("");
+    const [preventiveAction, setPreventiveAction] = useState("");
+    const [estimatedReworkTime, setEstimatedReworkTime] = useState(0);
+    const [requiresExternalSupport, setRequiresExternalSupport] = useState(false);
+    const [requireRework, setRequireRework] = useState(false);
+    const [qualityVerified, setQualityVerified] = useState(false);
+    const [closeRnc, setCloseRnc] = useState(false);
     const [critical_level, setCritical_level] = useState("");
-    const [condition, setCondition] = useState("");
-    const [status, setStatus] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
 
+    const [refused, setRefused] = useState(false);
+
     useEffect(() => {
-        if(!partCode.trim()){
-            setPartCode("");
+        if(!part_code.trim()){
             setRncData(null);
-            setObservations("");
-            setCritical_level("");
-            setCondition("");
-            setStatus("");
             setErrorMsg("");
             return;
         }
@@ -30,138 +31,246 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
             setLoading(true);
             setErrorMsg("");
             try {
-                const part_code = partCode.trim();
-                const response = await api.get(`/part/code/${part_code}`);
-                const data = response.data;
-                setPartData(data);
+                const response = await api.get<RNCReadWithPart>(`/rnc/partCode/${part_code}`);
+                setRncData(response.data)
+                console.log(response.data)
             } catch (error) {
                 console.error("Erro ao buscar peça: ", error);
+                setRncData(null)
                 setErrorMsg("Peça não encontrada");
             } finally {
                 setLoading(false);
             }
-        }, 800)
+        }, 900)
         return () => clearTimeout(timeout);
-    }, [partCode]);
-
-    const handleFetchRNC = async () => {
-        if(!partData){
-            setErrorMsg("Nenhuma peça selecionada!");
-            return;
-        }
-
-        try {
-            const response = await api.get(`/rnc/partCode/${partCode}`);
-            const data = response.data;
-            console.log("RNC encontrada: ", data);
-            setRncData(data);
-            setObservations(data.observations || "");
-            setCritical_level(data.critical_level || "");
-            setCondition(data.condition || "");
-        } catch (error) {
-            console.error("Erro ao buscar RNC: ", error);
-            setErrorMsg("RNC não encontrado para esse código de peça");
-        } finally {
-            setLoading(false);
-        }
-    }
+    }, [part_code]);
 
     const handleUpdateRNC = async () => {
         if(!rncData) return;
+        const payload = {
+            analysis_observations: analysisObservations,
+            critical_level,
+            root_cause: rootCause,
+            corrective_action: correctiveAction,
+            preventive_action: preventiveAction,
+            estimated_rework_time: estimatedReworkTime,
+            requires_external_support: requiresExternalSupport,
+            quality_verified: qualityVerified,
+            close_rnc: closeRnc,
+            refused: refused
+        }
         try {
             setLoading(true);
-            await api.patch(`/rnc/update_rnc/${rncData.num_rnc}`, {
-                observations,
-                critical_level,
-                condition,
-                status,
-            });
+            await api.patch(`/rnc/analysis/${rncData.num_rnc}`, payload);
             onSubmit();
             onClose();
-            setPartCode("");
-            setRncData(null);
-            setObservations("");
-            setCritical_level("");
-            setCondition("");
-            setStatus("");
-            setErrorMsg("");
+            clear()
             alert("RNC atualizada com sucesso!");
             handleClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erro ao atualizar RNC: ", error);
-            alert("Erro ao atualizar RNC");
+            setErrorMsg(error.customMessage)
         }
     };
 
+    const clear = () => {
+        setPart_code("")
+        setRncData(null)
+        setAnalysisObservations("")
+        setCritical_level("")
+        setRootCause("")
+        setCorrectiveAction("")
+        setPreventiveAction("")
+        setEstimatedReworkTime(0)
+        setRequiresExternalSupport(false)
+        setQualityVerified(false)
+        setRefused(false)
+        setErrorMsg("")
+        setLoading(false)
+    }
+
     const handleClose = () => {
-        setPartCode("");
+        setPart_code("");
         setRncData(null);
-        setObservations("");
+        setAnalysisObservations("");
         setCritical_level("");
-        setCondition("");
-        setErrorMsg("");
+        setRootCause("")
+        setCorrectiveAction("")
+        setPreventiveAction("")
+        setEstimatedReworkTime(0)
+        setRequiresExternalSupport(false)
+        setQualityVerified(false)
+        setRefused(false)
+        setErrorMsg("")
+        setLoading(false)
         onClose();
     };
 
     if(!isOpen) return null;
 
     return(
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-            <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+        <div className="fixed inset-0 overflow-y-auto flex items-start justify-center bg-black/40 bg-opacity-40 z-50 p-4">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
                 <h2 className="text-lg font-bold mb-4">Buscar RNC por código da peça</h2>
-                {rncData ? (
-                    <button onClick={() => {setRncData(null); setErrorMsg("");}} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">&times;</button>
-                ) : null}
-                { !rncData ? (
-                    <div className="flex gap-2 mb-4">
-                        <input type="text" value={partCode} onChange={(e) => setPartCode(e.target.value)} placeholder="Insira o código da peça..." className="w-full border rounded p-2" />
-                        <button onClick={handleFetchRNC} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Buscar RNC</button>
+                <div className="relative">
+                    <label className="block mb-2 text-sm font-medium text-gray-700">
+                        Código da peça:
+                    </label>
+                    <input 
+                        type="text" 
+                        value={part_code} 
+                        onChange={(e)=> setPart_code(e.target.value)} 
+                        placeholder="Inform o código da peça..." 
+                        className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                    {loading && (
+                        <p className="absolute top-10 right-3 text-black-500 text-sm">Carregando...</p>
+                    )}
+                </div>
+
+                {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+
+                {rncData && (
+                    <div className="border border-gray-300 rounded-md p-4 mb-4 bg-gray-50">
+                        <h3 className="font-semibold text-gray-700 mb-2">Informações do RNC atrelado a peça</h3>
+                        <p><strong>Título do RNC - </strong>{rncData?.title}</p>
+                        <p><strong>N° RNC : </strong>{rncData?.num_rnc}</p>
+                        <p><strong>Observações do Operador: </strong>{rncData?.observations}</p>
+                        <p><strong>Descrição da Peça: </strong>{rncData?.part.description}</p>
+                        <p><strong>Cliente: </strong>{rncData?.part.client}</p>
+                        <p><strong>Condição da Peça: </strong>{rncData?.condition}</p>
+                        <p><strong>Peça ativa? </strong>{rncData?.part.active ? "Sim" : "Peça descontinuada"}</p>
+                        <p><strong>Nível Crítico - </strong>{rncData?.critical_level}</p>
+                        <p><strong>Data/hora de ocorrência - </strong>{rncData?.date_of_occurrence ? new Intl.DateTimeFormat("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                            hour12: false
+                        }).format(new Date(rncData.date_of_occurrence)) : "-"}</p>
                     </div>
-                ) : (
-                    <>
-                        <input type="text" value={partCode} onChange={(e) => setPartCode(e.target.value)} placeholder="Insira o código da peça..." className="w-full border rounded p-2 mb-3" />
-                        {loading && <p className="text-sm text-gray-500">Buscando RNC...</p>}
-                        {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}
-                        <div className="space-y-4">
-                            <div className="border rounded p-3 bg-gray-50">
-                                <h3 className="font-semibold mb-2">Informações da Peça</h3>
-                                <p><strong>Titulo do RNC:</strong> {rncData.title}</p>
-                                <p><strong>Número do RNC:</strong> {rncData.num_rnc}</p>
-                                <p><strong>Código da Peça:</strong> {rncData.part?.part_code}</p>
-                                <p><strong>Descrição:</strong> {rncData.part?.description}</p>
-                                <p><strong>Status:</strong> {rncData.status}</p>
-                                <p><strong>Condição:</strong> {rncData.condition}</p>
-                                <p><strong>Nível crítico:</strong> {rncData.critical_level}</p>
-                                <p><strong>Data de Ocorrência:</strong> {new Date(rncData.opening_date).toLocaleDateString()}</p>
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <textarea placeholder="Observações..." value={observations} onChange={(e) => setObservations(e.target.value)} className="w-full border rounded p-2" rows={4}/>
-                                <label className="text-sm font-semibold mt-2">Nível Crítico</label>
-                                <select value={critical_level} onChange={(e) => setCritical_level(e.target.value)} className="w-full border rounded p-2">
-                                    <option value="">Selecione</option>
-                                    <option value="baixo">Baixo</option>
-                                    <option value="medio">Médio</option>
-                                    <option value="alto">Alto</option>
-                                </select>
-                                <label className="text-sm font-semibold mt-2">Condição:</label>
-                                <select value={condition} onChange={(e) => setCondition(e.target.value)} className="w-full border rounded p-2">
-                                    <option value="">Selecione</option>
-                                    <option value="em_analise">Em análise</option>
-                                    <option value="aprovado">Aprovado</option>
-                                    <option value="retrabalho">Retrabalho</option>
-                                    <option value="refugo">Refugo</option>
-                                </select>
-                                <label className="text-sm font-semibold mt-2">Status:</label>
-                                <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full border rounded p-2">
-                                    <option value="">Selecione</option>
-                                    <option value="aberto">Aberto</option>
-                                    <option value="fechado">Fechado</option>
-                                </select>
-                            </div>
-                        </div>
-                    </>
                 )}
+
+                {/**Campos do RNC */}
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                    Observações
+                    <textarea 
+                        value={analysisObservations} 
+                        onChange={(e)=> setAnalysisObservations(e.target.value)}
+                        rows={4} 
+                        className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                </label>
+                
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                    Causa raíz indentificada
+                    <input 
+                        type="text" 
+                        value={rootCause} 
+                        onChange={(e)=> setRootCause(e.target.value)} 
+                        className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                </label>
+
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                    Ação corretiva proposta:
+                    <input 
+                        type="text" 
+                        value={correctiveAction} 
+                        onChange={(e)=> setCorrectiveAction(e.target.value)} 
+                        className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                </label>
+
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                    Ação preventiva proposta: 
+                    <input 
+                        type="text" 
+                        value={preventiveAction} 
+                        onChange={(e)=> setPreventiveAction(e.target.value)} 
+                        className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                </label>
+
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                    Tempo de retrabalho estimado (em minutos):  
+                    <input 
+                        type="number"
+                        value={estimatedReworkTime} 
+                        onChange={(e)=> {
+                            const v = e.target.value;
+                            setEstimatedReworkTime(v === "" ? 0 : Number(v));
+                        }} 
+                        className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    />
+                </label>
+
+                <div className="flex items-center gap-2 mb-4">
+                    <label htmlFor="requireExternalSupport" className="text-sm font-medium text-gray-700 cursor-pointer">
+                        <span>Requer suporte externo?</span>
+                    </label>
+                    <input 
+                        type="checkbox" 
+                        checked={requiresExternalSupport}
+                        onChange={(e)=> setRequiresExternalSupport(e.target.checked)} 
+                        className="h-4 w-4 cursor-pointer" 
+                    />
+                </div>
+                <div className="flex items-center gap-2 mb-4">
+                    <label htmlFor="requireExternalSupport" className="text-sm font-medium text-gray-700 cursor-pointer">
+                        <span>Não requer Retrabalho</span>
+                    </label>
+                    <input 
+                        type="checkbox" 
+                        checked={requireRework}
+                        onChange={(e)=> setRequireRework(e.target.checked)} 
+                        className="h-4 w-4 cursor-pointer" 
+                    />
+                </div>
+                <div className="flex items-center gap-2 mb-4">
+                    <label htmlFor="refused" className="text-sm font-medium text-gray-700 cursor-pointer">
+                        <span>Refugo?</span>
+                    </label>
+                    <input 
+                        type="checkbox"
+                        checked={refused}
+                        onChange={(e)=> setRefused(e.target.checked)}
+                        className="h-4 w-4 cursor-pointer"
+                        />
+                </div>
+                {rncData?.condition === "aguardando_verificacao" && (
+                    <div className="flex items-center gap-2 mb-4">
+                        <label htmlFor="qualityVerified" className="text-sm font-medium text-gray-700 cursor-pointer">
+                            <span>Qualidade verificada após retrabalho</span>
+                        </label>
+                        <input 
+                            type="checkbox"
+                            checked={qualityVerified}
+                            onChange={(e)=>setQualityVerified(e.target.checked)}
+                            className="h-4 w-4 cursor-pointer"
+                        />
+                    </div>
+                )}
+                {qualityVerified || requireRework ? (
+                    <div className="flex items-center gap-2 mb-4">
+                        <label htmlFor="closeRnc" className="text-sm font-medium text-gray-700 cursor-pointer">
+                            <span>Fechar RNC</span>
+                        </label>
+                        <input 
+                            type="checkbox"
+                            checked={closeRnc}
+                            onChange={(e)=> setCloseRnc(e.target.checked)}
+                            className="h-4 w-4 cursor-pointer"
+                            />
+                    </div>
+                ): (
+                    <></>
+                )}
+
                 <div className="flex justify-end mt-6 space-x-3">
+                    { errorMsg && <p className="text-sm text-center text-red-500">{errorMsg}</p>}
                     <button onClick={handleClose} className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancelar</button>
                     {rncData && (
                         <button onClick={handleUpdateRNC} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white">Realizar apontamento</button>
