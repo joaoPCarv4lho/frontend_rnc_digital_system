@@ -13,4 +13,11 @@ api.interceptors.request.use((config)=>{
     return config;
 });
 
+api.interceptors.response.use((response) => response, (error) => {
+    const backendMessage = error.response?.data?.error || error.response?.data?.detail || error.response?.data?.message || "Erro desconhecido";
+    error.customMessage = backendMessage;
+
+    return Promise.reject(error);
+})
+
 export default api;
