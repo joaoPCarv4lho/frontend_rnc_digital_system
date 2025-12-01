@@ -1,12 +1,12 @@
-import type { RNC } from "./rnc";
+import type { RNCReadSimple } from "./rnc";
 
 export interface Column{
     key: string;
     label: string;
-    render?: (rnc: RNC) => React.ReactNode
+    render?: (rnc: RNCReadSimple) => React.ReactNode
 }
 export interface RNCTableProps {
-    rncs: RNC[];
+    rncs: RNCReadSimple[];
     situation?: string;
     columns: Column[];
 }

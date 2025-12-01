@@ -39,12 +39,34 @@ export const RNCTable = ({rncs, situation, columns}: RNCTableProps) => {
                                                 <ConditionBadge condition={rnc.condition} />
                                             </td>
                                         );
-                                    case "opening_date":
+                                    case "date_of_occurrence":
                                         return(
                                             <td className="py-3 px-4 font-medium text-gray-800">
-                                                {rnc.opening_date ? new Date(rnc.opening_date).toLocaleDateString("pt-BR"): "-"}
+                                                {rnc?.date_of_occurrence ? new Intl.DateTimeFormat("pt-BR", {
+                                                    day: "2-digit",
+                                                    month: "2-digit",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                    second: "2-digit",
+                                                    hour12: false
+                                                }).format(new Date(rnc?.date_of_occurrence)) : "-" }
                                             </td>
                                         );
+                                    case "closing_date":
+                                        return(
+                                            <td className="py-3 px-4 font-medium text-gray-800">
+                                                {rnc?.closing_date ? new Intl.DateTimeFormat("pt-BR", {
+                                                    day: "2-digit",
+                                                    month: "2-digit",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                    second: "2-digit",
+                                                    hour12: false
+                                                }).format(new Date(rnc?.closing_date)) : "-"}
+                                            </td>
+                                        )
                                     case "open_by":
                                         return(
                                             <td className="py-3 px-4 font-medium text-gray-800">
@@ -66,7 +88,7 @@ export const RNCTable = ({rncs, situation, columns}: RNCTableProps) => {
                                                 }
                                             </td>
                                         );
-                                }
+                                    }
                             })}
                         </motion.tr>
                     ))}
