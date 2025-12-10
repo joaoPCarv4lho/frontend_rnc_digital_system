@@ -92,7 +92,7 @@ export default function AdminDashboard(){
                         <FadeMessage key="no-data" text="Nenhum RNC encontrado." />
                     ): (
                         <motion.div key="table" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} transition={{duration: 0.5}}>
-                            <RNCSection mode="stats" title="Rncs" rncs={statistics} loading={loading}/>
+                            <RNCSection mode="stats" title="rncs" rncs={statistics} loading={loading}/>
                         </motion.div>
                     )}
                 </AnimatePresence>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { toast } from "react-hot-toast";
 import type { RNCReadWithPart } from "../types/rnc"
 import type { RNCUpdateModalProps } from "../types/rncUpdateModal"
 import api from "../services/api";
@@ -38,7 +39,10 @@ export const RNCModalTechnical = ({ isOpen, onClose, onSubmit }: RNCUpdateModalP
     }, [part_code]);
 
     const handleUpdateRNC = async () => {
-        if(!rncData) return;
+        if(!rncData) {
+            toast.error("Nenhum RNC selecionado");
+            return;
+        }
         const payload = {
             rework_description: reworkObservations,
             actions_taken: actionsTaken,
@@ -48,14 +52,17 @@ export const RNCModalTechnical = ({ isOpen, onClose, onSubmit }: RNCUpdateModalP
         try {
             setLoading(true);
             await api.patch(`/rnc/rework/${rncData.num_rnc}`, payload);
+            toast.success("Retrabalho registrado com sucesso!");
             onSubmit();
             onClose();
             clear()
-            alert("RNC atualizada com sucesso!");
             handleClose();
         } catch (error: any) {
             console.error("Erro ao atualizar RNC: ", error);
+            toast.error(error.customMessage || "Erro ao registrar retrabalho");
             setErrorMsg(error.customMessage)
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -73,14 +80,10 @@ export const RNCModalTechnical = ({ isOpen, onClose, onSubmit }: RNCUpdateModalP
     const handleClose = () => {
         setPart_code("");
         setRncData(null);
-        setPart_code("")
-        setRncData(null)
         setReworkObservations("")
         setActionsTaken("")
         setMaterialsUsed("")
         setTimeSpent(0);
-        setErrorMsg("")
-        setLoading(false)
         setErrorMsg("")
         setLoading(false)
         onClose();
@@ -91,7 +94,7 @@ export const RNCModalTechnical = ({ isOpen, onClose, onSubmit }: RNCUpdateModalP
     return(
         <div className="fixed inset-0 overflow-y-auto flex items-start justify-center bg-black/40 bg-opacity-40 z-50 p-4">
             <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-lg font-bold mb-4">Buscar RNC por código da peça</h2>
+                <h2 className="text-lg font-bold mb-4">Registrar Retrabalho</h2>
                 <div className="relative">
                     <label className="block mb-2 text-sm font-medium text-gray-700">
                         Código da peça:
@@ -108,7 +111,7 @@ export const RNCModalTechnical = ({ isOpen, onClose, onSubmit }: RNCUpdateModalP
                     )}
                 </div>
 
-                {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+                {errorMsg && <p className="text-red-600 text-sm mb-4">{errorMsg}</p>}
 
                 {rncData && (
                     <div className="border border-gray-300 rounded-md p-4 mb-4 bg-gray-50">
@@ -191,7 +194,9 @@ export const RNCModalTechnical = ({ isOpen, onClose, onSubmit }: RNCUpdateModalP
                     { errorMsg && <p className="text-sm text-center text-red-500">{errorMsg}</p>}
                     <button onClick={handleClose} className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancelar</button>
                     {rncData && (
-                        <button onClick={handleUpdateRNC} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white">Realizar apontamento</button>
+                        <button onClick={handleUpdateRNC} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white" disabled={loading}>
+                            {loading ? "Registrando..." : "Realizar apontamento"}
+                        </button>
                     )}
                 </div>
             </div>

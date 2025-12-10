@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { toast } from "react-hot-toast";
 import type { RNCReadWithPart } from "../types/rnc"
 import type { RNCUpdateModalProps } from "../types/rncUpdateModal"
 import api from "../services/api";
@@ -62,14 +63,17 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
         try {
             setLoading(true);
             await api.patch(`/rnc/analysis/${rncData.num_rnc}`, payload);
+            toast.success("RNC atualizado com sucesso!");
             onSubmit();
             onClose();
             clear()
-            alert("RNC atualizada com sucesso!");
             handleClose();
         } catch (error: any) {
             console.error("Erro ao atualizar RNC: ", error);
+            toast.error(error.customMessage || "Erro ao atualizar RNC");
             setErrorMsg(error.customMessage)
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -111,7 +115,7 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
     return(
         <div className="fixed inset-0 overflow-y-auto flex items-start justify-center bg-black/40 bg-opacity-40 z-50 p-4">
             <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-lg font-bold mb-4">Buscar RNC por código da peça</h2>
+                <h2 className="text-lg font-bold mb-4">Analisar RNC</h2>
                 <div className="relative">
                     <label className="block mb-2 text-sm font-medium text-gray-700">
                         Código da peça:
@@ -128,14 +132,18 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
                     )}
                 </div>
 
-                {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+                {errorMsg && <p className="text-red-600 text-sm mb-4">{errorMsg}</p>}
 
                 {rncData && (
                     <div className="border border-gray-300 rounded-md p-4 mb-4 bg-gray-50">
                         <h3 className="font-semibold text-gray-700 mb-2">Informações do RNC atrelado a peça</h3>
                         <p><strong>Título do RNC - </strong>{rncData?.title}</p>
                         <p><strong>N° RNC : </strong>{rncData?.num_rnc}</p>
-                        <p><strong>Observações do Operador: </strong>{rncData?.observations}</p>
+                        {rncData.condition === "em_analise" ? (
+                            <p><strong>Observações do Operador: </strong>{rncData?.observations}</p>
+                            ) : rncData.condition === "aguardando_verificacao" && (
+                                <p><strong>Observações do Tecnico: </strong>{rncData?.rework_description}</p>
+                            )}
                         <p><strong>Descrição da Peça: </strong>{rncData?.part.description}</p>
                         <p><strong>Cliente: </strong>{rncData?.part.client}</p>
                         <p><strong>Condição da Peça: </strong>{rncData?.condition}</p>
@@ -156,21 +164,21 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
                 {/**Campos do RNC */}
                 <label className="block mb-2 text-sm font-medium text-gray-700">
                     Observações
-                    <textarea 
-                        value={analysisObservations} 
+                    <textarea
+                        value={analysisObservations}
                         onChange={(e)=> setAnalysisObservations(e.target.value)}
-                        rows={4} 
-                        className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                        rows={4}
+                        className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </label>
-                
+
                 <label className="block mb-2 text-sm font-medium text-gray-700">
                     Causa raíz indentificada
-                    <input 
-                        type="text" 
-                        value={rootCause} 
-                        onChange={(e)=> setRootCause(e.target.value)} 
-                        className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                    <input
+                        type="text"
+                        value={rootCause}
+                        onChange={(e)=> setRootCause(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </label>
 
@@ -273,7 +281,9 @@ export const RNCUpdateModal = ({ isOpen, onClose, onSubmit }: RNCUpdateModalProp
                     { errorMsg && <p className="text-sm text-center text-red-500">{errorMsg}</p>}
                     <button onClick={handleClose} className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancelar</button>
                     {rncData && (
-                        <button onClick={handleUpdateRNC} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white">Realizar apontamento</button>
+                        <button onClick={handleUpdateRNC} className="px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white" disabled={loading}>
+                            {loading ? "Atualizando..." : "Realizar apontamento"}
+                        </button>
                     )}
                 </div>
             </div>

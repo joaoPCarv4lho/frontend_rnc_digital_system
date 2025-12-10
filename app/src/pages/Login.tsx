@@ -82,7 +82,7 @@ export default function LoginPage(){
                     <h1 className="text-2xl font-bold mb-6 text-center text-gray-700">Login</h1>
                 </div>
                 {error && (<p className="text-red-500 text-center mb-4 text-sm">{error}</p>)}
-                <Input label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required />
+                <Input label="Matricula" name="registration" type="text" value={formData.email} onChange={handleChange} required />
                 <Input label="Password" name="password" type="password" value={formData.password} onChange={handleChange} required />
                 <button 
                     type="submit"

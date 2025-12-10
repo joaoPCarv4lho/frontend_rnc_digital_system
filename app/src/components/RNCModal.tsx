@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 import api from "../services/api";
 import type { RNCModalProps } from "../types/rncModal";
 import type { Part } from "../types/part";
@@ -8,27 +9,9 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
     const [part_code, setPart_code] = useState("");
     const [title, setTitle] = useState("");
     const [observations, setObservations] = useState("");
-    const [criticalLevel, setCriticalLevel] = useState("baixo");
-    const [condition, setCondition] = useState("");
+    const [criticalLevel, setCriticalLevel] = useState("baixa");
     const [loading, setLoading] = useState(false);
-    const [errorMsg, setErrorMsg] = useState("");
-
-    // const handleQRCodeInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    //     const part_code = event.target.value.trim();
-    //     setPartCode(part_code);
-
-    //     // Se o leitor enviar ENTER após ler o QR
-    //     if (part_code.length > 0) {
-    //         try {
-    //             const response = await api.get(`/parts/${part_code}`);
-    //             setPartData(response.data);
-    //         } catch (error) {
-    //             console.error("Erro ao buscar peça:", error);
-    //             setPartData(null);
-    //         }
-    //     }
-    // };
-
+    const [errorMsg, setErrorMsg] = useState("");;
     useEffect(() =>{
         if(!part_code.trim()){
             setPartData(null);
@@ -57,12 +40,9 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
     const handleSubmit = async () => {
             if (!partData) {
                 setErrorMsg("Nenhuma peça selecionada!");
+                toast.error("Nenhuma peça selecionada!");
                 return;
             }
-            if (!condition) {
-                setErrorMsg("Selecione uma condição válida.");
-            return;
-}
             const payload = {
                 part_id: partData.id,
                 part_code: part_code,
@@ -73,6 +53,7 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
             try {
                 setLoading(true);
                 await api.post("/rnc/create_rnc", payload);
+                toast.success("RNC criado com sucesso!");
                 onSubmit();
                 onClose();
                 // Limpa o estado
@@ -80,10 +61,10 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
                 setObservations("");
                 setPart_code("");
                 setPartData(null);
-                setCriticalLevel("baixo");
-            } catch (error) {
+                setCriticalLevel("baixa");
+            } catch (error: any) {
                 console.error("Erro ao criar RNC:", error);
-                alert("Erro ao criar RNC. Verifique os dados e tente novamente.");
+                toast.error(error.customMessage || "Erro ao criar RNC");
             } finally {
                 setLoading(false);
         }
@@ -95,7 +76,8 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
         setObservations("");
         setPart_code("");
         setPartData(null);
-        setCriticalLevel("baixo");
+        setCriticalLevel("baixa");
+        setErrorMsg("");
         onClose();
     }
 
@@ -103,51 +85,37 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
 
     return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-semibold mb-4">Criar novo RNC</h2>
+            <div className="relative">
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                    Código da Peça:
+                </label>
+                <input
+                    type="text"
+                    value={part_code}
+                    onChange={(e) => setPart_code(e.target.value)}
+                    placeholder="Digite o código da peça..."
+                    className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
 
-        {/* Leitor QR Code
-        <label className="block mb-2 text-sm font-medium text-gray-700">
-            Leitura do QR Code da peça:
-        </label>
-        <input
-            type="text"
-            value={partCode}
-            onChange={handleQRCodeInput}
-            placeholder="Aproxime o leitor do QR Code..."
-            className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            autoFocus
-        /> */}
-
-        <div className="relative">
-            <label className="block mb-2 text-sm font-medium text-gray-700">
-                Código da Peça:
-            </label>
-            <input
-                type="text"
-                value={part_code}
-                onChange={(e) => setPart_code(e.target.value)}
-                placeholder="Digite o código da peça..."
-                className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-
-            {loading && (
-                <p className="absolute top-10 right-3 text-black-500 text-sm">Carregando...</p>
-            )}
-        </div>
-
-        {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
-
-        {/* Mini ficha da peça */}
-        {partData && (
-            <div className="border border-gray-300 rounded-md p-4 mb-4 bg-gray-50">
-                <h3 className="font-semibold text-gray-700 mb-2">Ficha da Peça</h3>
-                <p><strong>Código:</strong> {partData.part_code}</p>
-                <p><strong>Descrição:</strong> {partData.description}</p>
-                <p><strong>Cliente:</strong> {partData.client}</p>
-                <p><strong>Ativo:</strong> {partData.active ? "Sim" : "Não"}</p>
+                {loading && (
+                    <p className="absolute top-10 right-3 text-black-500 text-sm">Carregando...</p>
+                )}
             </div>
-        )}
+
+            {errorMsg && <p className="text-red-600 text-sm mb-4">{errorMsg}</p>}
+
+            {/* Mini ficha da peça */}
+            {partData && (
+                <div className="border border-gray-300 rounded-md p-4 mb-4 bg-gray-50">
+                    <h3 className="font-semibold text-gray-700 mb-2">Ficha da Peça</h3>
+                    <p><strong>Código:</strong> {partData.part_code}</p>
+                    <p><strong>Descrição:</strong> {partData.description}</p>
+                    <p><strong>Cliente:</strong> {partData.client}</p>
+                    <p><strong>Ativo:</strong> {partData.active ? "Sim" : "Não"}</p>
+                </div>
+            )}
 
         {/* Campos do RNC */}
         <label className="block mb-2 text-sm font-medium text-gray-700">
@@ -160,24 +128,7 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
             className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        {/* Campo Condição */}
-        <label className="block mb-2 text-sm font-medium text-gray-700">
-            Condição da Peça:
-        </label>
-        <select
-            value={condition}
-            onChange={(e) => setCondition(e.target.value)}
-            className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-            <option value="">Selecione uma condição</option>
-            <option value="em_analise">Em análise</option>
-            <option value="aprovado">Aprovado</option>
-            <option value="retrabalho">Retrabalho</option>
-            <option value="refugo">Refugo</option>
-        </select>
-
         {/* Campo Observações */}
-
         <label className="block mb-2 text-sm font-medium text-gray-700">
             Observações:
         </label>
