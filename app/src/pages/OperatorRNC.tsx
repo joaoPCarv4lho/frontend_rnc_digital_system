@@ -1,83 +1,127 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/useAuth";
-import api from "../services/api";
-import { RNCTable } from "../components/RNCTable";
+
+import { motion, AnimatePresence } from "framer-motion";
+import { CircleUserRound } from "lucide-react";
+
+import { FadeMessage } from "../components/FadeMessage";
+import { RNCSection } from "../components/RNCSection";
 import { RNCModal } from "../components/RNCModal";
 import { Navbar } from "../components/Navbar";
-import type { RNC } from "../types/rnc";
+
+import { useRNCWebSocket } from "../hooks/useRNCWebSocket";
+import type { RNCListResponse } from "../types/rnc";
+import { useAuth } from "../context/useAuth";
+import api from "../services/api";
+
+const operatorColumns = [
+    { key: "num_rnc", label: "N° RNC" },
+    { key: "title", label: "Título" },
+    { key: "status", label: "Status" },
+    { key: "condition", label: "Condição" },
+    { key: "closing_date", label: "Data de Fechamento" }
+];
+
 
 export default function OperatorRNCPage(){
     const {user, isAuthenticated} = useAuth();
     const navigate = useNavigate();
-    const [rncs, setRncs] = useState<RNC[]>([]);
-    const [ModalOpen, setModalOpen] = useState(false);
-    const [loading, setLoading] = useState(true);
 
-    console.log("OperatorRNCPage render:", { user, isAuthenticated, rncs });
+    const [rncs, setRncs] = useState<RNCListResponse>({
+        items: [],
+        total: 0,
+        page: 1,
+        page_size: 10,
+        total_pages: 1
+    });
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string>("");
+
 
     useEffect(()=>{
-        if(!isAuthenticated){
-            navigate("/login")
-            return;
-        }
-        if (!user) {
-            console.log("Usuário ainda não carregado, aguardando...");
-            return;
-        }
-        if (user.role !== "operador") {
-            console.log("Usuário não é operador, redirecionando para home...");
-            navigate("/");
-            return;
-        }
+        if(!isAuthenticated) navigate("/login");
     }, [isAuthenticated, navigate, user]);
 
-    const loadRNCs = async () =>{
-        try{
-            console.log("Carregando RNCs do usuário...");
-            setLoading(true);
-            const response = await api.get("/rnc/list_user_rncs");
-            console.log("RNCs recebidas:", response.data);
-            setRncs(Array.isArray(response.data) ? response.data : []);
-        }catch(error){
-            console.error("Error loading RNCs:", error);
-            setRncs([]);
+    const fetchUserRncs = useCallback(async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const { data } = await api.get("/rnc/list/open/user");
+            setRncs({
+                items: Array.isArray(data.items) ? data.items : [],
+                total: data.total ?? 0,
+                page: data.page ?? 1,
+                page_size: data.page_size ?? data.items?.length ?? 10,
+                total_pages: data.total_pages ?? 1
+            });
+        } catch (error: any) {
+            console.error("Erro ao carregar RNCs: ", error);
+            setError(error.customMessage)
+            setRncs({
+                items: [],
+                total: 0,
+                page: 0,
+                page_size: 0,
+                total_pages: 0
+            });
         }finally{
             setLoading(false);
         }
-    }
+    }, []);
 
     useEffect(() =>{
-        loadRNCs();
-    }, []);
+        if(user) fetchUserRncs();
+    }, [user, fetchUserRncs]);
+
+    useRNCWebSocket({
+        onRncCreated: fetchUserRncs,
+        onRncUpdated: fetchUserRncs,
+        onRncClosed: fetchUserRncs
+    })
+
 
       // Fallback para página em branco
     if (!isAuthenticated || !user) {
         return (
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <p>Carregando informações do usuário...</p>
         </div>
         );
     }
 
     return(
-        <div className="min-h-screen bg-gray-100">
-            <Navbar />
-            <div className="max-w-5xl mx-auto mt-8 p-6">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-semibold">RNCs Criados</h1>
-                    <button onClick={() => setModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">Criar novo RNC</button>
+        <div className="min-h-screen bg-gray-200">
+            <Navbar title="Painel do Operador" icon={<CircleUserRound />}/>
+
+            <div className="container mx-auto px-4 py-8">
+                {/**Cabeçalho */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                    <h1 className="text-2xl font-semibold text-gray-800">RNCs abertos por mim</h1>
+                    <button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">
+                        Abrir Novo RNC
+                    </button>
                 </div>
-                {/* Loader */}
-                {loading ? (
-                    <p>Carregando RNCs...</p>
-                ) : rncs.length === 0 ? (
-                    <p>Nenhum RNC encontrado.</p>
-                ) : (
-                    <RNCTable rncs={rncs} />
-                )}
-                <RNCModal isOpen={ModalOpen} onClose={() => setModalOpen(false)} onSubmit={loadRNCs} />
+
+                {/**Conteúdo principal */}
+                <AnimatePresence mode="wait">
+                    {loading ? (
+                        <FadeMessage key="loading" text="Carregando RNCs..." />
+                    ) : error ?(
+                        <FadeMessage key="error" text={error} color="text-red-500" />
+                    ) : rncs.items.length === 0 ?(
+                        <FadeMessage key="empty" text="Nenhum RNC encontrado" />
+                    ) : (
+                        <motion.div key="table" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
+                            <RNCSection mode="list" title="Meus RNCs" rncs={rncs} situation="" loading={loading} typeColumns={operatorColumns} />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/**Modal para criação de novo RNC */}
+                <RNCModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={fetchUserRncs} />
             </div>
         </div>
     );
-}
+} 

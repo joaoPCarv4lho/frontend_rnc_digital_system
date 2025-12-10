@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
 import type { RNCModalProps } from "../types/rncModal";
-import { useAuth } from "../context/useAuth";
 import type { Part } from "../types/part";
 
 export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
-    const {user} = useAuth();
-    const [part_code, setPart_code] = useState("");
     const [partData, setPartData] = useState<Part | null>(null);
+    const [part_code, setPart_code] = useState("");
     const [title, setTitle] = useState("");
     const [observations, setObservations] = useState("");
     const [criticalLevel, setCriticalLevel] = useState("baixo");
@@ -43,6 +41,8 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
             try {
                 const response = await api.get(`/part/code/${part_code}`);
                 setPartData(response.data);
+                console.log(response)
+                
             } catch (error) {
                 console.error("Erro ao buscar peça:", error);
                 setPartData(null);
@@ -65,12 +65,10 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
 }
             const payload = {
                 part_id: partData.id,
+                part_code: part_code,
                 title,
-                observations,
                 critical_level: criticalLevel,
-                date_of_occurrence: new Date().toISOString(),
-                open_by_id: user?.id,
-                condition,
+                observations,
             };
             try {
                 setLoading(true);
@@ -199,9 +197,11 @@ export const RNCModal = ({isOpen, onClose, onSubmit}: RNCModalProps) => {
             onChange={(e) => setCriticalLevel(e.target.value)}
             className="w-full border border-gray-300 rounded-md p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-            <option value="baixo">Baixo</option>
-            <option value="medio">Médio</option>
-            <option value="alto">Alto</option>
+            <option value="">Selecione o nível de criticidade</option>
+            <option value="baixa">Baixa</option>
+            <option value="media">Média</option>
+            <option value="alta">Alta</option>
+            <option value="critica">Critica</option>
         </select>
 
             <div className="flex justify-end space-x-3">
