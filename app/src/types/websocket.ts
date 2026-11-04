@@ -25,6 +25,11 @@ class WebSocketClient{
     }
 
     public initialize(token: string){
+        // No modo mock não há servidor WebSocket; evita tentativas de conexão e ruído no console.
+        if(import.meta.env.VITE_USE_MOCK === "true"){
+            console.info("[WebSocket] Modo MOCK ativado — conexão em tempo real desabilitada.");
+            return;
+        }
         if(this.isInitialized){
             if(this.currentToken == token){
                 console.log("Websocket já inicializado com esse token")

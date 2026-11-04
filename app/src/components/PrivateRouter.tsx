@@ -23,9 +23,8 @@ export const PrivateRouter = ({ children, allowedRoles }: PrivateRouterProps) =>
             case "engenharia":
                 return <Navigate to="/engineering-dashboard" replace />
             case "tecnico_fundicao":
-                return <Navigate to="/tec-fundicao" replace />
             case "tecnico_usinagem":
-                return <Navigate to="/tec-usinagem" replace />
+                return <Navigate to="/technical" replace />
             default:
                 return <Navigate to="/login" replace />
         }

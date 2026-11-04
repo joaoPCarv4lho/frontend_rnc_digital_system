@@ -87,7 +87,8 @@ export default function TechnicalPage(){
 
     useEffect(()=> {
         fetchRncs();
-    }, [fetchRncs]);
+        fetchReworked();
+    }, [fetchRncs, fetchReworked]);
 
     useRNCWebSocket({
         onRncCreated: fetchRncs,

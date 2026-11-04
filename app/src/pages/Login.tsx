@@ -52,6 +52,8 @@ export default function LoginPage(){
                     navigate("/engineering-dashboard");
                     break;
                 case "tecnico":
+                case "tecnico_fundicao":
+                case "tecnico_usinagem":
                     navigate("/technical");
                     break;
                 default:

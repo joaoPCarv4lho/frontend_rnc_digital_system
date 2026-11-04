@@ -12,8 +12,13 @@ const INITIAL_FORM: UserRegisterData = {
     active: true
 }
 
-const roles = [
-    "admin", "qualidade", "engenharia", "operador", "tecnico"
+const roles: { value: UserRegisterData["role"]; label: string }[] = [
+    { value: "admin", label: "Administrador" },
+    { value: "qualidade", label: "Qualidade" },
+    { value: "engenharia", label: "Engenharia" },
+    { value: "operador", label: "Operador" },
+    { value: "tecnico_fundicao", label: "Técnico de Fundição" },
+    { value: "tecnico_usinagem", label: "Técnico de Usinagem" },
 ];
 
 export default function RegisterPage(){
@@ -67,8 +72,8 @@ export default function RegisterPage(){
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cargo:</label>
                     <select name="role" value={formData.role} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500">
                         {roles.map((role) => (
-                            <option key={role} value={role}>
-                                {role.replace("_", " ")}
+                            <option key={role.value} value={role.value}>
+                                {role.label}
                             </option>
                         ))}
                     </select>
@@ -91,7 +96,7 @@ export default function RegisterPage(){
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition-colors">
                     {loading ? "Registrando..." : "Registrar"}
                 </button>
-                {message && (<p className={`mt-4 text-center ${message.includes("successfully") ? "text-green-600" : "text-red-600"}`}>{message}</p>)}
+                {message && (<p className={`mt-4 text-center ${message.toLowerCase().includes("sucesso") ? "text-green-600" : "text-red-600"}`}>{message}</p>)}
             </form>
         </div>
     );

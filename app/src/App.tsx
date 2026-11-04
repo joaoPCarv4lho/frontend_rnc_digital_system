@@ -32,7 +32,7 @@ function App() {
           </PrivateRouter>} />
 
         <Route path='/technical' element={
-          <PrivateRouter allowedRoles={["tecnico"]}>
+          <PrivateRouter allowedRoles={["tecnico", "tecnico_fundicao", "tecnico_usinagem"]}>
             <TechnicalPage />
           </PrivateRouter>
         } />
