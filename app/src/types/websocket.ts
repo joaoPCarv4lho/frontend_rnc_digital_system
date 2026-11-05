@@ -33,8 +33,6 @@ class WebSocketClient{
         if(this.isInitialized){
             if(this.currentToken == token){
                 console.log("Websocket já inicializado com esse token")
-                console.log(token)
-                console.log(this.currentToken)
                 return;
             }
             console.log("Token mudou, reiniciando conexão...")

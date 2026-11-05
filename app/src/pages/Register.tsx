@@ -12,15 +12,6 @@ const INITIAL_FORM: UserRegisterData = {
     active: true
 }
 
-const roles: { value: UserRegisterData["role"]; label: string }[] = [
-    { value: "admin", label: "Administrador" },
-    { value: "qualidade", label: "Qualidade" },
-    { value: "engenharia", label: "Engenharia" },
-    { value: "operador", label: "Operador" },
-    { value: "tecnico_fundicao", label: "Técnico de Fundição" },
-    { value: "tecnico_usinagem", label: "Técnico de Usinagem" },
-];
-
 export default function RegisterPage(){
     const [formData, setFormData] = useState<UserRegisterData>(INITIAL_FORM);
     const [loading, setLoading] = useState<boolean>(false);
@@ -68,28 +59,6 @@ export default function RegisterPage(){
                 <Input label="Nome" name="name" value={formData.name} onChange={handleChange} required />
                 <Input label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required />
                 <Input label="Password" name="password" type="password" value={formData.password} onChange={handleChange} required />
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cargo:</label>
-                    <select name="role" value={formData.role} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500">
-                        {roles.map((role) => (
-                            <option key={role.value} value={role.value}>
-                                {role.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div>
-                    <label>
-                        Active:
-                        <input
-                            type="checkbox"
-                            name="active"
-                            checked={formData.active}
-                            onChange={handleChange}
-                            className="ml-2"
-                        />
-                    </label>
-                </div>
                 <button 
                     type="submit"
                     disabled={loading}
